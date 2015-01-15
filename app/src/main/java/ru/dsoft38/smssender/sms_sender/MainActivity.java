@@ -18,17 +18,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.List;
-
-
-public class FileDialogDepends{
-    public FileDialogDepends refresh(){
-        refresh();
-        return this;
-    }
-}
 
 public class MainActivity extends ActionBarActivity {
 
@@ -111,6 +101,7 @@ public class MainActivity extends ActionBarActivity {
         // Назначаем обработчик нажатия на кнопку выбора файла
         btnBrowse.setOnClickListener(new View.OnClickListener() {
             public void onClick(View view) {
+                new FileDialog(this).openFileDialog(new FileDialogDepends());
 
                 btnStart.setEnabled(true);
                 btnPause.setEnabled(true);

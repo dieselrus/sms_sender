@@ -5,10 +5,13 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.os.Environment;
+import android.view.View;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Created by user on 15.01.2015.
@@ -20,7 +23,7 @@ public class FileDialog extends AlertDialog{
     AlertDialog.Builder builder;
     AlertDialog dialog;
     FilenameFilter filenameFilter;
-    PluginProperties plugin_props;
+    //PluginProperties plugin_props;
     FileDialogDepends fileDialogDepends;
 
     public static String FILENAME_FILTER =
@@ -31,9 +34,9 @@ public class FileDialog extends AlertDialog{
             Environment.getExternalStorageDirectory().getPath();;
 
 
-    public FileDialog(Context context) {
-        super(context);
-        this.context=context;
+    public FileDialog(View.OnClickListener context) {
+        super((Context) context);
+        this.context= (Context) context;
 
         filenameFilter=new FilenameFilter(){
             @Override
@@ -62,7 +65,7 @@ public class FileDialog extends AlertDialog{
         builder = new AlertDialog.Builder(context);
 
         dir=new File(CURRENT_PATH);
-        builder.setTitle(R.string.select_file);
+        //builder.setTitle(R.string.select_file);
         files=concatAll(dirs(dir),files(dir,filenameFilter));
         builder.setItems(files, listenerFileDialog);
         builder.setNegativeButton(android.R.string.cancel, null);
@@ -140,7 +143,7 @@ public class FileDialog extends AlertDialog{
         }
         String[] res=(String[])
                 files.toArray(new String[files.size()]);
-        Arrays.sort(res, new SortedByName());
+        //Arrays.sort(res, new SortedByName());
         return res;
     }
 
@@ -160,7 +163,7 @@ public class FileDialog extends AlertDialog{
 
         String[] res=(String[])
                 files.toArray(new String[files.size()]);
-        Arrays.sort(res, new SortedByName());
+        //Arrays.sort(res, new SortedByName());
         return res;
     }
 
