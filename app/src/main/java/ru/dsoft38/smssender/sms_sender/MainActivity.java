@@ -1,5 +1,6 @@
 package ru.dsoft38.smssender.sms_sender;
 
+import android.content.Context;
 import android.os.Environment;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
@@ -28,7 +29,7 @@ public class MainActivity extends ActionBarActivity {
     ImageButton btnStop;
     ImageButton btnClear;
 
-    TextView tvPhoneNumberListFilePatch;
+    static TextView tvPhoneNumberListFilePatch;
     EditText editMessageTest;
 
     ProgressBar progressBar;
@@ -63,7 +64,7 @@ public class MainActivity extends ActionBarActivity {
                             Toast.LENGTH_LONG).show();
                     return;
                 } else {
-                    List<String> strNumbers = readFile("");
+                    List<String> strNumbers = readFile(tvPhoneNumberListFilePatch.getText().toString());
                     String message = editMessageTest.getText().toString();
 
                     int maxCount = strNumbers.size();
@@ -101,7 +102,10 @@ public class MainActivity extends ActionBarActivity {
         // Назначаем обработчик нажатия на кнопку выбора файла
         btnBrowse.setOnClickListener(new View.OnClickListener() {
             public void onClick(View view) {
-                new FileDialog(this).openFileDialog(new FileDialogDepends());
+
+                OpenFileDialog fd = new OpenFileDialog(MainActivity.this ).setFilter(".*\\.txt");
+                fd.show();
+                //tvPhoneNumberListFilePatch.setText(fd.getContext().);
 
                 btnStart.setEnabled(true);
                 btnPause.setEnabled(true);
@@ -184,10 +188,11 @@ public class MainActivity extends ActionBarActivity {
     List<String> readFile(String filePath){
 
         List<String> strNumbers = null;
-        File sdcard = Environment.getExternalStorageDirectory();
+        //File sdcard = Environment.getExternalStorageDirectory();
 
         //Создаём объект файла
-        File file = new File(sdcard, filePath);
+        //File file = new File(sdcard, filePath);
+        File file = new File(filePath);
 
         //Read text from file
         //StringBuilder text = new StringBuilder();
@@ -199,7 +204,7 @@ public class MainActivity extends ActionBarActivity {
             while ((line = br.readLine()) != null) {
                 //text.append(line);
                 //text.append('\n');
-                strNumbers.add(line);
+                strNumbers.add(line.trim());
             }
         }
         catch (IOException e) {
@@ -239,5 +244,9 @@ public class MainActivity extends ActionBarActivity {
     protected void onStop() {
         // TODO Auto-generated method stub
         super.onStop();
+    }
+
+    static public void setFilePath(String path){
+        tvPhoneNumberListFilePatch.setText(path);
     }
 }
