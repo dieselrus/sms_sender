@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.List;
+import java.util.Vector;
 
 public class MainActivity extends ActionBarActivity {
 
@@ -49,6 +50,8 @@ public class MainActivity extends ActionBarActivity {
 
         editMessageTest = (EditText) findViewById(R.id.editMessageText);
         tvPhoneNumberListFilePatch = (TextView) findViewById(R.id.tvPhoneNumberListPath);
+
+        progressBar = (ProgressBar) findViewById(R.id.progressBar);
 
         // Назначаем обработчик нажатия на кнопку Отправить СМС
         btnStart.setOnClickListener(new View.OnClickListener() {
@@ -88,7 +91,7 @@ public class MainActivity extends ActionBarActivity {
                         String num = strNumbers.get(i).replace("-", "").replace(";", "").replace(" ", "").trim() ;
 
                         // Проверяем длину номера 11 символов или 12, если с +
-                        if(num.length() == 11 || (num.substring(1, 1) == "+" && num.length() == 12)) {
+                        if(num.length() == 11 || (num.substring(0, 1).equals("+") && num.length() == 12)) {
                             sendSMSMessage(num, message);
                         }
 
@@ -172,8 +175,8 @@ public class MainActivity extends ActionBarActivity {
         //String message = txtMessage.getText().toString();
 
         try {
-            //SmsManager smsManager = SmsManager.getDefault();
-            //smsManager.sendTextMessage(phoneNo, null, message, null, null);
+            SmsManager smsManager = SmsManager.getDefault();
+            smsManager.sendTextMessage(phoneNo, null, message, null, null);
             Toast.makeText(getApplicationContext(), "SMS sent.",
                     Toast.LENGTH_LONG).show();
         } catch (Exception e) {
@@ -187,7 +190,7 @@ public class MainActivity extends ActionBarActivity {
     // Чтение файла с номерами
     List<String> readFile(String filePath){
 
-        List<String> strNumbers = null;
+        List<String> strNumbers = new Vector<String>();
         //File sdcard = Environment.getExternalStorageDirectory();
 
         //Создаём объект файла
@@ -208,7 +211,7 @@ public class MainActivity extends ActionBarActivity {
             }
         }
         catch (IOException e) {
-            //Ошибка
+            Log.d("Data", e.getMessage().toString());
         }
 
         //Log.d("Data", text);

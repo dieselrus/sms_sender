@@ -64,7 +64,7 @@
         android:layout_alignParentRight="true"
         android:layout_alignParentEnd="true"
         android:paddingTop="15dp"
-        android:indeterminate="true"
+        android:indeterminate="false"
         style="@android:style/Widget.ProgressBar.Horizontal" />
 
     <ImageButton
