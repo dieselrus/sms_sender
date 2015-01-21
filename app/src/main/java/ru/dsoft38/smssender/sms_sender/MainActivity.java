@@ -1,10 +1,15 @@
 package ru.dsoft38.smssender.sms_sender;
 
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Environment;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.telephony.SmsManager;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -19,6 +24,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -31,25 +37,37 @@ public class MainActivity extends ActionBarActivity {
     ImageButton btnClear;
 
     static TextView tvPhoneNumberListFilePatch;
+    static TextView tvPhoneNumberCount;
+    TextView tvPhoneNumberPathFile;
+    TextView tvMessage;
+
     EditText editMessageTest;
 
     ProgressBar progressBar;
 
     int CurrentIndexSMS = 0;
+    int maxSMSLen = 160;
+    int smsCount = 1;
     boolean isStop = false;
+
+    static List<String> strNumbers;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        btnBrowse = (ImageButton) findViewById(R.id.imgButtonBrowse);
-        btnStart = (ImageButton) findViewById(R.id.imgButtonSend);
-        btnPause = (ImageButton) findViewById(R.id.imgButtonPause);
-        btnStop = (ImageButton) findViewById(R.id.imgButtonStop);
+        btnBrowse   = (ImageButton) findViewById(R.id.imgButtonBrowse);
+        btnStart    = (ImageButton) findViewById(R.id.imgButtonSend);
+        btnPause    = (ImageButton) findViewById(R.id.imgButtonPause);
+        btnStop     = (ImageButton) findViewById(R.id.imgButtonStop);
 
         editMessageTest = (EditText) findViewById(R.id.editMessageText);
-        tvPhoneNumberListFilePatch = (TextView) findViewById(R.id.tvPhoneNumberListPath);
+
+        tvPhoneNumberListFilePatch  = (TextView) findViewById(R.id.tvPhoneNumberListPath);
+        tvPhoneNumberPathFile       = (TextView) findViewById(R.id.tvPhoneNumberPathFile);
+        tvPhoneNumberCount          = (TextView) findViewById(R.id.tvPhoneNumCount);
+        tvMessage                   = (TextView) findViewById(R.id.tvMessage);
 
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
 
@@ -61,13 +79,13 @@ public class MainActivity extends ActionBarActivity {
                 btnStart.setEnabled(false);
 
                 // Выбран файл с номерами телефонов
-                if(tvPhoneNumberListFilePatch.getText().length() == 0) {
+                if(tvPhoneNumberListFilePatch.getText().length() == 0 || strNumbers.size() == 0) {
                     Toast.makeText(getApplicationContext(),
                             "Выберите файл со списком номеров для отправки!",
                             Toast.LENGTH_LONG).show();
                     return;
                 } else {
-                    List<String> strNumbers = readFile(tvPhoneNumberListFilePatch.getText().toString());
+                    //List<String> strNumbers = readFile(tvPhoneNumberListFilePatch.getText().toString());
                     String message = editMessageTest.getText().toString();
 
                     int maxCount = strNumbers.size();
@@ -108,7 +126,12 @@ public class MainActivity extends ActionBarActivity {
 
                 OpenFileDialog fd = new OpenFileDialog(MainActivity.this ).setFilter(".*\\.txt");
                 fd.show();
+
+                // Чтение списка номеров из файла
+                //strNumbers = readFile(tvPhoneNumberListFilePatch.getText().toString());
+
                 //tvPhoneNumberListFilePatch.setText(fd.getContext().);
+                //tvPhoneNumberPathFile.setText(getResources().getString(R.string.phoneNumberList) + " (" + String.valueOf(strNumbers.size()) + ")");
 
                 btnStart.setEnabled(true);
                 btnPause.setEnabled(true);
@@ -142,6 +165,44 @@ public class MainActivity extends ActionBarActivity {
                 btnBrowse.setEnabled(true);
             }
         });
+
+        //Обработка ввода символов в текстовое поле для текста СМС
+        editMessageTest.addTextChangedListener(new TextWatcher()  {
+            @Override
+            public void afterTextChanged(Editable s) {
+                //imgStatus.setVisibility(View.INVISIBLE);
+                //tvMessageText.setText(getResources().getString(R.string.MessageText) +
+                // " (" + String.valueOf(MAX_LENGTH_SMS - strMyName.length() - txtSMSText.length()) + ")");
+
+                //String strCurrentSMS = "1";
+
+                if(isCyrillic(editMessageTest.getText().toString())){
+                    maxSMSLen = 70;
+                } else {
+                    maxSMSLen = 160;
+                }
+
+                smsCount = (int)(editMessageTest.getText().length() / maxSMSLen) + 1;
+                String strCurrentSMS = String.valueOf(smsCount);
+
+                String totalSMSLen = String.valueOf(editMessageTest.getText().length()) ;
+
+                tvMessage.setText(getResources().getString(R.string.messageText) + " (" + totalSMSLen + "/" + strCurrentSMS + ")");
+            }
+
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count,
+                                          int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before,
+                                      int count) {
+
+            }
+
+        });
     }
 
 
@@ -174,9 +235,31 @@ public class MainActivity extends ActionBarActivity {
         //String phoneNo = txtphoneNo.getText().toString();
         //String message = txtMessage.getText().toString();
 
+        String SENT = "SMS_SENT";
+        String DELIVERED = "SMS_DELIVERED";
+
+        PendingIntent sentPI = PendingIntent.getBroadcast(this, 0, new Intent(SENT), 0);
+        PendingIntent deliveredPI = PendingIntent.getBroadcast(this, 0, new Intent(DELIVERED), 0);
+
+        registerReceiver(new SendSms(), new IntentFilter(SENT));
+        registerReceiver(new DeliverySms(), new IntentFilter(DELIVERED));
+
         try {
             SmsManager smsManager = SmsManager.getDefault();
-            smsManager.sendTextMessage(phoneNo, null, message, null, null);
+            //if(smsCount > 1){
+                ArrayList mArray = smsManager.divideMessage(message);
+                ArrayList sentArrayIntents = new ArrayList();
+                ArrayList deliveredArrayIntents = new ArrayList();
+
+                for(int i = 0; i < mArray.size(); i++) {
+                    sentArrayIntents.add(sentPI);
+                    deliveredArrayIntents.add(deliveredPI);
+                }
+
+                smsManager.sendMultipartTextMessage(phoneNo, null, mArray, sentArrayIntents, deliveredArrayIntents);
+            //} else {
+            //    smsManager.sendTextMessage(phoneNo, null, message, null, null);
+            //}
             Toast.makeText(getApplicationContext(), "SMS sent.",
                     Toast.LENGTH_LONG).show();
         } catch (Exception e) {
@@ -188,7 +271,7 @@ public class MainActivity extends ActionBarActivity {
     }
 
     // Чтение файла с номерами
-    List<String> readFile(String filePath){
+    static List<String> readFile(String filePath){
 
         List<String> strNumbers = new Vector<String>();
         //File sdcard = Environment.getExternalStorageDirectory();
@@ -217,6 +300,21 @@ public class MainActivity extends ActionBarActivity {
         //Log.d("Data", text);
 
         return strNumbers;
+    }
+
+    // Определение языка (Кирилица или нет)
+    boolean isCyrillic(String _str){
+        for(int i = 0; i < _str.length(); i++){
+            //String hexCode = Integer.toHexString(_str.codePointAt(i)).toUpperCase();
+            int hexCode = _str.codePointAt(i);
+            //Log.d("Data", String.valueOf(hexCode));
+
+            if(hexCode > 1040 && hexCode < 1103){
+                return true;
+            }
+
+        }
+        return false;
     }
 
     @Override
@@ -250,6 +348,10 @@ public class MainActivity extends ActionBarActivity {
     }
 
     static public void setFilePath(String path){
+        // Чтение списка номеров из файла
+        strNumbers = readFile(tvPhoneNumberListFilePatch.getText().toString());
+
+        tvPhoneNumberCount.setText("(" + String.valueOf(strNumbers.size()) + ")");
         tvPhoneNumberListFilePatch.setText(path);
     }
 }
